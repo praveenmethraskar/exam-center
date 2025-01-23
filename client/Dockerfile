@@ -1,20 +1,27 @@
-# Base image
-FROM node:20 AS build
+# Use the official Node.js image as the base image
+FROM node:14
+
+# Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy package files and install dependencies
+# Copy the package.json and package-lock.json first (for efficient caching)
 COPY client/package*.json ./
+
+# Install dependencies (including axios and babel plugin)
 RUN npm install
 
-# Copy the application files
-COPY client/ ./
+# Install axios and Babel plugin specifically
+RUN npm install axios --save
+RUN npm install @babel/plugin-proposal-private-property-in-object --save-dev
 
-# Build the application
+# Copy the rest of the application code
+COPY client/ .
+
+# Build the React app
 RUN npm run build
 
-# Serve the frontend with a lightweight HTTP server
-FROM nginx:alpine
-COPY --from=build /usr/src/app/build /usr/share/nginx/html
+# Expose the app port (if necessary)
+EXPOSE 3000
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Command to start the app (if running in production)
+CMD ["npm", "start"]
