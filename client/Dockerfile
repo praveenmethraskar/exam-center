@@ -1,21 +1,20 @@
-# Base Image for Client
-FROM node:20 AS build-client
+# Base image
+FROM node:20 AS build
 WORKDIR /usr/src/app
 
-# Create a user to avoid running as root
-RUN useradd -ms /bin/bash appuser
+# Copy package files and install dependencies
 COPY client/package*.json ./
-RUN npm install  # Install dependencies as root to avoid permission issues
+RUN npm install
+
+# Copy the application files
 COPY client/ ./
-RUN chown -R appuser:appuser /usr/src/app  # Change ownership to appuser
 
-USER appuser  # Switch to appuser for the rest of the process
-EXPOSE 3000
-CMD ["npm", "start"]
+# Build the application
+RUN npm run build
 
-# Final Client Image
-FROM node:20-slim
-WORKDIR /usr/src/app
-COPY --from=build-client /usr/src/app ./
-EXPOSE 3000
-CMD ["npm", "start"]
+# Serve the frontend with a lightweight HTTP server
+FROM nginx:alpine
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
