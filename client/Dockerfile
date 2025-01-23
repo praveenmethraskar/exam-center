@@ -3,7 +3,12 @@ WORKDIR /usr/src/app
 
 # Create user
 RUN useradd -ms /bin/bash appuser
-USER appuser
+USER root  # Temporarily use root user to install dependencies
+
+# Ensure appuser has ownership of the entire working directory
+RUN chown -R appuser:appuser /usr/src/app
+
+USER appuser  # Switch back to appuser
 
 # Copy package.json and package-lock.json files with correct ownership
 COPY --chown=appuser:appuser client/package*.json ./
@@ -21,13 +26,8 @@ COPY client/ ./
 # Build the React app
 RUN npm run build
 
-# Install a simple static file server (serve)
-RUN npm install -g serve
-
 # Expose the app's port
 EXPOSE 3000
 
-# Serve the built React app
-CMD ["serve", "-s", "build", "-l", "3000"]
-
-
+# Start the application
+CMD ["npm", "start"]
