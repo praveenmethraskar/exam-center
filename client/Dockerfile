@@ -10,6 +10,11 @@ USER appuser
 
 # Copy the package.json and package-lock.json first (for efficient caching)
 COPY client/package*.json ./
+# Ensure appuser has proper permissions for the working directory
+RUN chown -R appuser:appuser /usr/src/app
+
+# Set appuser as the owner of node_modules directory
+RUN mkdir -p /usr/src/app/node_modules && chown -R appuser:appuser /usr/src/app/node_modules
 
 # Install dependencies using npm ci for a clean environment (instead of npm install)
 RUN npm ci
