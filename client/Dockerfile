@@ -1,33 +1,21 @@
-FROM node:20 AS build
+# Base Image for Client
+FROM node:20 AS build-client
 WORKDIR /usr/src/app
 
-# Create user
+# Create a user to avoid running as root
 RUN useradd -ms /bin/bash appuser
-USER root  # Temporarily use root user to install dependencies
-
-# Ensure appuser has ownership of the entire working directory
-RUN chown -R appuser:appuser /usr/src/app
-
-USER appuser  # Switch back to appuser
-
-# Copy package.json and package-lock.json files with correct ownership
-COPY --chown=appuser:appuser client/package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Install additional dependencies like axios and Babel plugin if needed
-RUN npm install axios --save
-RUN npm install @babel/plugin-proposal-private-property-in-object --save-dev
-
-# Copy the rest of the application
+COPY client/package*.json ./
+RUN npm install  # Install dependencies as root to avoid permission issues
 COPY client/ ./
+RUN chown -R appuser:appuser /usr/src/app  # Change ownership to appuser
 
-# Build the React app
-RUN npm run build
-
-# Expose the app's port
+USER appuser  # Switch to appuser for the rest of the process
 EXPOSE 3000
+CMD ["npm", "start"]
 
-# Start the application
+# Final Client Image
+FROM node:20-slim
+WORKDIR /usr/src/app
+COPY --from=build-client /usr/src/app ./
+EXPOSE 3000
 CMD ["npm", "start"]
