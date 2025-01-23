@@ -22,7 +22,7 @@ const Login = () => {
     setErrorMessage("")
 
     try {
-      const response = await axios.post("http://0.0.0.0:3001/api/login", {
+      const response = await axios.post("http://3.109.132.148:3001/api/login", {
         username,
         password,
       })
