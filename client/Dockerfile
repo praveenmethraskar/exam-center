@@ -1,39 +1,33 @@
-# Use the official Node.js image as the base image (updated to node:20 for compatibility)
 FROM node:20 AS build
-
-# Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Create a non-root user and switch to it
+# Create user
 RUN useradd -ms /bin/bash appuser
 USER appuser
 
-# Copy the package.json and package-lock.json first (for efficient caching)
-COPY client/package*.json ./
-# Ensure appuser has proper permissions for the working directory
-RUN chown -R appuser:appuser /usr/src/app
+# Copy package.json and package-lock.json files with correct ownership
+COPY --chown=appuser:appuser client/package*.json ./
 
-# Set appuser as the owner of node_modules directory
-RUN mkdir -p /usr/src/app/node_modules && chown -R appuser:appuser /usr/src/app/node_modules
-
-# Install dependencies using npm ci for a clean environment (instead of npm install)
-RUN npm ci
-
-# Ensure react-scripts has the correct permissions
-RUN chmod +x node_modules/.bin/react-scripts
+# Install dependencies
+RUN npm install
 
 # Install additional dependencies like axios and Babel plugin if needed
 RUN npm install axios --save
 RUN npm install @babel/plugin-proposal-private-property-in-object --save-dev
 
-# Copy the rest of the application code
-COPY client/ .
+# Copy the rest of the application
+COPY client/ ./
 
 # Build the React app
 RUN npm run build
 
-# Expose the app port (if necessary)
+# Install a simple static file server (serve)
+RUN npm install -g serve
+
+# Expose the app's port
 EXPOSE 3000
 
-# Command to start the app (for production environment)
-CMD ["npm", "start"]
+# Serve the built React app
+CMD ["serve", "-s", "build", "-l", "3000"]
+
+
