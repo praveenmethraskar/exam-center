@@ -1,12 +1,16 @@
+# Stage 1: Build
 FROM node:20 AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
 
-WORKDIR /usr/src/app
-COPY backend/package*.json ./
-RUN npm install
-COPY backend/ .
-
+# Stage 2: Production
 FROM node:20-slim
-WORKDIR /usr/src/app
-COPY --from=build /usr/src/app .
-EXPOSE 3001
-CMD ["npm", "start"]
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+COPY package*.json ./
+RUN npm ci --only=production
+EXPOSE 3000
+CMD ["node", "dist/index.js"]
